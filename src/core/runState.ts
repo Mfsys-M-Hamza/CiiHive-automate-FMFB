@@ -18,6 +18,10 @@ export interface RunState {
   walkingCustomer?: { serialNo: number; identificationNo: string };
   /** A second customer whose application is closed and then reopened (Unclose Customer). */
   closedCustomer?: { applicationNo: number; identificationNo: string };
+  /** The chain customer's individual deposit account; used by TDR, Loan and Transactions. */
+  deposit?: { applicationNo: number; accountNo?: string };
+  freeze?: { freezeWorkflowNo?: number; freezeId?: string; unfreezeWorkflowNo?: number; unfreezeId?: string };
+  digitalDeposit?: { applicationNo: number };
 }
 
 const FILE = path.resolve(__dirname, '../../run-state/chain.json');

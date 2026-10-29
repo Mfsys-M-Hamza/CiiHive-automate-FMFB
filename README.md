@@ -9,8 +9,15 @@ The suite is one business chain. Each module works on the records created by the
    - Block, approve, then UnBlock and approve (always ends unblocked so later modules can use the customer)
    - Walking customer: create; edit is marked as a known app issue (see below)
    - Close a second customer's application, unclose it, then approve it from the queue again
-   - Freeze / Unfreeze needs a deposit or loan account, so it will be added with the Deposit module
-2. Deposit: open an account for that customer, then approve it
+2. **Deposit** ✅
+   - Individual account: open for the chain customer, approve (account number issued)
+   - A second Saving Account for the same customer is rejected (one per customer)
+   - Modify the account title, exempt the account from a charge, set an account-level charge rate (each reloaded to confirm it was saved)
+   - Unmark Dormant is rejected for an active account
+   - Freeze → approve → Unfreeze → approve (CRM screens; always ends unfrozen)
+   - Digital account: open; approval is marked as a known app issue (see below)
+   - Inquiries: account statement and All Deposit Inquiry show the new account
+   - Not covered yet: Business account (needs a business customer), Mark Lien (needs a balance, so it comes after the cash deposit)
 3. TDR: register a TDR for the customer and deposit, then approve it
 4. Loan: create, approve and authorize a loan
 5. Teller Batch: open + authorize, replenish + approve, cash to vault + approve
@@ -32,6 +39,7 @@ cp .env.example .env   # then fill in CIIHIVE_PASSWORD
 npm test                 # whole chain, headless
 npm run test:headed      # watch it in a browser
 npm run test:crm         # CRM module only
+npm run test:deposit     # Deposit module (creates + approves a fresh customer first)
 npm run report           # open the HTML report of the last run
 ```
 
@@ -44,6 +52,8 @@ Set `DEBUG_FORM=1` to log every wizard step transition.
 ## Known app issues (tests marked `test.fail`)
 
 - **Edit Walking Customer** lists a fixed set of 21 old walking customers and never shows new ones, so a newly created walking customer can't be edited. The test is expected to fail. When the app is fixed it will turn red; remove the `test.fail` line then.
+
+- **Digital deposit account approval**: saved digital applications never appear in Deposit Workflow NR › Digital Authorization, so they can't be approved.
 
 ## Layout
 

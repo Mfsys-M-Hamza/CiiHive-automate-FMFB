@@ -60,6 +60,23 @@ export class DynamicForm {
     throw new Error(`Dropdown ${key} did not keep a value for option "${option}"`);
   }
 
+  /** Ticks one option (by leading text or index) in a PrimeNG multi-select, then closes the panel. */
+  async multiSelect(key: string, option: string | number): Promise<void> {
+    const ms = this.field(key).locator('p-multiselect');
+    await ms.evaluate(el => el.scrollIntoView({ block: 'center' }));
+    await ms.locator('.p-multiselect-trigger').click();
+    const items = this.page.locator('.p-multiselect-panel .p-multiselect-item');
+    await items.first().waitFor({ timeout: 10_000 });
+    await this.page.waitForTimeout(250);
+    const target = typeof option === 'number'
+      ? items.nth(option)
+      : items.filter({ hasText: new RegExp(`^\\s*${escapeRegex(option)}`) }).first();
+    await target.click();
+    await this.page.keyboard.press('Escape');
+    await this.settle();
+    await expect(ms.locator('.p-multiselect-label')).not.toHaveClass(/p-multiselect-label-empty/);
+  }
+
   /** Types a date in the app's dd/mm/yyyy format. */
   async date(key: string, ddmmyyyy: string): Promise<void> {
     const input = this.field(key).locator('p-calendar input');
