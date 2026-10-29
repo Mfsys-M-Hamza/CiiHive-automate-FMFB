@@ -17,11 +17,15 @@ The suite is one business chain. Each module works on the records created by the
    - Freeze → approve → Unfreeze → approve (CRM screens; always ends unfrozen)
    - Digital account: open; approval is marked as a known app issue (see below)
    - Inquiries: account statement and All Deposit Inquiry show the new account
-   - Not covered yet: Business account (needs a business customer), Mark Lien (needs a balance, so it comes after the cash deposit)
-3. TDR: register a TDR for the customer and deposit, then approve it
-4. Loan: create, approve and authorize a loan
-5. Teller Batch: open + authorize, replenish + approve, cash to vault + approve
-6. Transactions: cash deposit and cash withdrawal on the deposit account
+   - Not covered yet: Business account (needs a business customer; parked for now)
+3. **Teller Batch & Cash Deposit** (in progress)
+   - Open Batch + approve (skipped while a SYP batch is already open for the user, see below)
+   - Cash deposit into the chain account, authorize it (Authorization › Deposit), check the balance went up
+   - Mark Lien on the funded account and check the blocked amount
+4. TDR: register a TDR for the customer and deposit, then approve it
+5. Loan: create, approve and authorize a loan
+6. Teller Batch: replenish + approve, cash to vault + approve, close
+7. Transactions: cash withdrawal on the deposit account
 
 Every run generates fresh test data (unique ID number, names, mobile), so you can run it as often as you like.
 
@@ -40,6 +44,7 @@ npm test                 # whole chain, headless
 npm run test:headed      # watch it in a browser
 npm run test:crm         # CRM module only
 npm run test:deposit     # Deposit module (creates + approves a fresh customer first)
+npm run test:cash        # Teller batch, cash deposit, lien (uses the account from the last Deposit run)
 npm run report           # open the HTML report of the last run
 ```
 
@@ -49,10 +54,16 @@ Later modules read them from there, so a single module can be re-run against the
 Failures keep a screenshot, video and trace under `test-results/`. Open a trace with `npx playwright show-trace <trace.zip>`.
 Set `DEBUG_FORM=1` to log every wizard step transition.
 
+**Teller batch:** a user can have only one open batch per currency. If a SYP batch is already open, "open teller batch"
+is skipped and the open batch is used for the cash deposit. Set `CLOSE_OPEN_BATCH=1` to have the suite close the leftover
+batch (its cash goes back to the vault) and test Open Batch from scratch.
+
 ## Known app issues (tests marked `test.fail`)
 
 - **Edit Walking Customer** lists a fixed set of 21 old walking customers and never shows new ones, so a newly created walking customer can't be edited. The test is expected to fail. When the app is fixed it will turn red; remove the `test.fail` line then.
 
+- **Mark Lien**: the loan "Maturity Date" stays mandatory even with "Lien On Loan = No"; the suite fills a date.
+- **Cash deposit authorization** shows no success message; the suite checks the transaction left the pending list and the balance changed.
 - **Digital deposit account approval**: saved digital applications never appear in Deposit Workflow NR › Digital Authorization, so they can't be approved.
 
 ## Layout

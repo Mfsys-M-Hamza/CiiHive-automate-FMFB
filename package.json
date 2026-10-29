@@ -8,7 +8,8 @@
     "test:crm": "playwright test tests/01-crm.spec.ts",
     "report": "playwright show-report",
     "typecheck": "tsc --noEmit",
-    "test:deposit": "playwright test tests/01-crm.spec.ts tests/02-deposit.spec.ts -g \"CRM › Individual Customer|Deposit\""
+    "test:deposit": "playwright test tests/01-crm.spec.ts tests/02-deposit.spec.ts -g \"CRM › Individual Customer|Deposit\"",
+    "test:cash": "playwright test tests/03-teller-cash.spec.ts"
   },
   "keywords": [],
   "author": "",

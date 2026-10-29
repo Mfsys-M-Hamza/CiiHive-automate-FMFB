@@ -4,14 +4,14 @@ import { Menu } from '../../core/menu';
 import { Grid, isChecked } from '../../core/grid';
 import { dismissToasts, visibleToasts, waitForToast } from '../../core/toast';
 
-/** Clicks Save and waits for the server call matching `endpoint` plus the "Record Updated" toast. */
-async function saveAndConfirm(page: Page, endpoint: RegExp): Promise<void> {
+/** Clicks Save and waits for the server call matching `endpoint` plus the success toast. */
+async function saveAndConfirm(page: Page, endpoint: RegExp, toast = /Record Updated/): Promise<void> {
   await dismissToasts(page);
   const saved = page.waitForResponse(r => endpoint.test(r.url()) && r.request().method() !== 'GET', { timeout: 60_000 });
   await page.getByRole('button', { name: 'Save' }).click();
   const response = await saved;
   expect(response.ok(), `${response.url()} -> HTTP ${response.status()} ${await response.text()}`).toBeTruthy();
-  await waitForToast(page, /Record Updated/);
+  await waitForToast(page, toast);
 }
 
 /**
@@ -123,6 +123,40 @@ export class DepositAccountRatePage extends AccountScreen {
 
   async save(): Promise<void> {
     await saveAndConfirm(this.page, /\/deposit\/account\/rate/);
+  }
+}
+
+/** Deposit > Operations > Utilities > Mark Lien Account: blocks part of the available balance. */
+export class LienMarkingPage {
+  private readonly form: DynamicForm;
+
+  constructor(private readonly page: Page, private readonly menu: Menu) {
+    this.form = new DynamicForm(page);
+  }
+
+  /** Opens the screen for a deposit account and returns its available balance and already-blocked amount. */
+  async open(accountNo: string): Promise<{ balance: number; blocked: number }> {
+    await this.page.goto(this.menu.url('Deposit > Operations > Utilities > Mark Lien Account'));
+    await this.form.settle();
+    await this.form.startNew();
+    await this.form.radio('accountType', 'Deposit');
+    const loaded = this.page.waitForResponse(r => r.url().includes('/deposit/account/deposittdrchargesdetails/'), { timeout: 60_000 });
+    await this.form.text('mbmBkmsnumber', accountNo);
+    await loaded;
+    await this.form.settle();
+    const num = async (key: string) => Number((await this.form.value(key)).replace(/,/g, '')) || 0;
+    return { balance: await num('mbmBkmsbalance'), blocked: await num('prevBlockedamt') };
+  }
+
+  /** Sets the account's total blocked amount ("New Blocked Amount" replaces the current lien total). */
+  async setBlockedAmount(total: number, reason = 'Upon Customer Request'): Promise<void> {
+    await this.form.text('bdaDpacblockamt', total);
+    await this.form.dropdown('bdaLienreason', reason);
+    await this.form.radio('mbmLoanLienAllowed', 'No');
+    await this.form.settle();
+    // Known app issue: the loan Maturity Date stays mandatory even with "Lien On Loan = No".
+    await this.form.date('blaLnacmaturitydateLoanRef', '31/12/2027');
+    await saveAndConfirm(this.page, /\/deposit\/account\/markLien/, /Record Added/);
   }
 }
 

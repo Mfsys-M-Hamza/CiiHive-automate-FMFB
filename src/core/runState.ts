@@ -22,6 +22,9 @@ export interface RunState {
   deposit?: { applicationNo: number; accountNo?: string };
   freeze?: { freezeWorkflowNo?: number; freezeId?: string; unfreezeWorkflowNo?: number; unfreezeId?: string };
   digitalDeposit?: { applicationNo: number };
+  /** Teller batch opened by this run (absent when an already-open batch was reused). */
+  batch?: { openWorkflowNo?: number; openedByRun?: boolean; closeWorkflowNo?: number };
+  cashDeposit?: { transactionNo: number; amount: number; balanceBefore: number };
 }
 
 const FILE = path.resolve(__dirname, '../../run-state/chain.json');

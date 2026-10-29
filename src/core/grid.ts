@@ -9,13 +9,21 @@ export class Grid {
 
   /** Row whose input value or dropdown label equals `label` (waits for the grid to load). */
   async row(label: string): Promise<Locator> {
+    return this.find(`grid row "${label}"`, (rows, t) => rows.findIndex(r =>
+      [...r.querySelectorAll('input')].some(i => (i as HTMLInputElement).value.trim() === t) ||
+      [...r.querySelectorAll('.p-dropdown-label')].some(d => (d as HTMLElement).innerText.trim() === t)), label);
+  }
+
+  /** Row with a numeric input equal to `n` (inputs are formatted like "562,249.000000"). */
+  async rowWithNumber(n: number | string, timeout = 30_000): Promise<Locator> {
+    return this.find(`grid row with number ${n}`, (rows, t) => rows.findIndex(r =>
+      [...r.querySelectorAll('input')].some(i => Number((i as HTMLInputElement).value.replace(/,/g, '')) === Number(t))), String(n), timeout);
+  }
+
+  private async find(message: string, fn: (rows: Element[], arg: string) => number, arg: string, timeout = 30_000): Promise<Locator> {
     let index = -1;
-    await expect.poll(async () => {
-      index = await this.root.locator('tr').evaluateAll((rows, t) => rows.findIndex(r =>
-        [...r.querySelectorAll('input')].some(i => (i as HTMLInputElement).value.trim() === t) ||
-        [...r.querySelectorAll('.p-dropdown-label')].some(d => (d as HTMLElement).innerText.trim() === t)), label);
-      return index;
-    }, { message: `grid row "${label}"`, timeout: 30_000 }).toBeGreaterThanOrEqual(0);
+    await expect.poll(async () => (index = await this.root.locator('tr').evaluateAll(fn, arg)),
+      { message, timeout }).toBeGreaterThanOrEqual(0);
     return this.root.locator('tr').nth(index);
   }
 
